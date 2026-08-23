@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tally Counter</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0c0e;
+    --bg-raised: #141418;
+    --bg-card: #1a1a20;
+    --bg-hover: #222229;
+    --bg-active: #2a2a33;
+    --fg: #eae8e4;
+    --fg-muted: #8b8890;
+    --fg-dim: #56545c;
+    --accent: #34d399;
+    --accent-dim: rgba(52,211,153,0.1);
+    --accent-mid: rgba(52,211,153,0.25);
+    --accent-glow: rgba(52,211,153,0.15);
+    --danger: #f87171;
+    --danger-dim: rgba(248,113,113,0.1);
+    --warn: #fbbf24;
+    --warn-dim: rgba(251,191,36,0.1);
+    --border: #26262e;
+    --border-light: #333340;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    top: -30%; left: -10%;
+    width: 50%; height: 60%;
+    background: radial-gradient(ellipse, rgba(52,211,153,0.035) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ── Top Bar ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(12,12,14,0.8);
+    backdrop-filter: blur(16px);
+    flex-shrink: 0;
+    position: relative; z-index: 10;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent), #059669);
+    display: flex; align-items: center; justify-content: center;
+    color: #0c0c0e; font-size: 16px; font-weight: 700;
+  }
+  .brand-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: 19px; letter-spacing: -0.5px;
+  }
+  .brand-text span { color: var(--fg-dim); font-weight: 400; font-size: 13px; margin-left: 8px; }
+
+  .topbar-center { display: flex; align-items: center; gap: 6px; }
+  .stat-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 14px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12.5px; color: var(--fg-muted);
+  }
+  .stat-pill .val { color: var(--fg); font-weight: 600; }
+  .stat-pill i { font-size: 11px; }
+
+  .topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ── Search Box ── */
+  .search-box {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 12px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 240px;
+    transition: border-color 0.15s, box-shadow 0.15s, width 0.15s;
+  }
+  .search-box:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+    width: 280px;
+  }
+  .search-box i.fa-search { font-size: 12px; color: var(--fg-dim); flex-shrink: 0; }
+  .search-box input {
+    background: none; border: none; outline: none;
+    color: var(--fg); font-family: inherit; font-size: 13px;
+    flex: 1; min-width: 0;
+  }
+  .search-box input::placeholder { color: var(--fg-dim); }
+  .search-clear {
+    display: none; border: none; background: none; color: var(--fg-dim);
+    cursor: pointer; font-size: 11px; padding: 2px; flex-shrink: 0;
+  }
+  .search-clear:hover { color: var(--fg); }
+  .search-box.has-query .search-clear { display: block; }
+
+  /* ── Mobile sidebar controls ── */
+  .mobile-menu-btn { display: none; }
+  .sidebar-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 19;
+  }
+  .sidebar-overlay.show { display: block; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-raised);
+    color: var(--fg);
+    font-size: 13px; font-family: inherit; font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--bg-hover); border-color: var(--border-light); }
+  .btn-accent {
+    background: var(--accent); color: #0c0c0e;
+    border-color: var(--accent); font-weight: 600;
+  }
+  .btn-accent:hover { background: #2cc28a; border-color: #2cc28a; }
+  .btn-danger { color: var(--danger); }
+  .btn-danger:hover { background: var(--danger-dim); border-color: var(--danger); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-ghost {
+    border: none; background: transparent; padding: 6px 10px;
+  }
+  .btn-ghost:hover { background: var(--bg-hover); }
+
+  /* ── Layout ── */
+  .layout { display: flex; flex: 1; overflow: hidden; position: relative; z-index: 1; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 272px; min-width: 272px;
+    border-right: 1px solid var(--border);
+    background: rgba(16,16,20,0.5);
+    backdrop-filter: blur(8px);
+    display: flex; flex-direction: column;
+  }
+  .sidebar-head {
+    padding: 14px 16px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-head h3 {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--fg-dim); font-weight: 600;
+  }
+  .sidebar-tree {
+    flex: 1; overflow-y: auto; padding: 6px 0;
+  }
+  .sidebar-tree::-webkit-scrollbar { width: 3px; }
+  .sidebar-tree::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Tree items */
+  .ti {
+    display: flex; align-items: center;
+    padding: 7px 14px 7px 0;
+    cursor: pointer;
+    transition: background 0.12s;
+    user-select: none;
+    position: relative;
+    font-size: 13.5px;
+  }
+  .ti:hover { background: var(--bg-hover); }
+  .ti.active { background: var(--accent-dim); }
+  .ti.active::before {
+    content: ''; position: absolute; left: 0; top: 3px; bottom: 3px;
+    width: 3px; background: var(--accent); border-radius: 0 3px 3px 0;
+  }
+  .ti.drag-over { background: var(--accent-dim); outline: 1px dashed var(--accent); outline-offset: -1px; }
+  .ti-chev {
+    width: 22px; height: 22px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--fg-dim); font-size: 9px; transition: transform 0.2s;
+  }
+  .ti-chev.open { transform: rotate(90deg); }
+  .ti-chev.blank { visibility: hidden; }
+  .ti-ico {
+    width: 24px; height: 24px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    margin-right: 8px; font-size: 13px; color: var(--accent);
+  }
+  .ti-lbl { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ti-cnt {
+    font-size: 10.5px; color: var(--fg-dim);
+    background: var(--bg); padding: 1px 7px; border-radius: 10px;
+    margin-left: 6px; flex-shrink: 0;
+  }
+  .ti-children { display: none; }
+  .ti-children.open { display: block; }
+
+  /* ── Content ── */
+  .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .content-head {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .breadcrumb { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--fg-muted); }
+  .breadcrumb span { cursor: pointer; transition: color 0.12s; }
+  .breadcrumb span:hover { color: var(--fg); }
+  .breadcrumb span.cur { color: var(--fg); font-weight: 500; cursor: default; }
+  .breadcrumb .sep { color: var(--fg-dim); font-size: 9px; cursor: default; }
+  .content-meta { font-size: 12px; color: var(--fg-dim); }
+
+  .items-scroll { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .items-scroll::-webkit-scrollbar { width: 5px; }
+  .items-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ── Counter Grid (tall, single-column list) ── */
+  .counter-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    max-width: 640px;
+  }
+
+  /* ── Counter Card ── */
+  .cc {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    position: relative;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .cc:hover { border-color: var(--border-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+  .cc.dragging { opacity: 0.35; }
+  .cc-menu {
+    position: absolute; top: 12px; right: 12px;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .cc:hover .cc-menu { opacity: 1; }
+  .cc:focus-within .cc-menu { opacity: 1; }
+  @media (hover: none) {
+    .cc-menu { opacity: 1; }
+  }
+  .cc-menu button {
+    width: 28px; height: 28px; border: none; border-radius: 6px;
+    background: var(--bg); color: var(--fg-dim); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; transition: all 0.12s;
+  }
+  .cc-menu button:hover { background: var(--bg-hover); color: var(--fg); }
+  .cc-menu button.del:hover { color: var(--danger); background: var(--danger-dim); }
+
+  .cc-name {
+    font-size: 14px; font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .cc-display {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    flex: 0 0 auto;
+  }
+  .cc-btn {
+    width: 44px; height: 44px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-raised);
+    color: var(--fg);
+    font-size: 20px; font-weight: 300;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.12s;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .cc-btn:hover { background: var(--bg-hover); border-color: var(--border-light); }
+  .cc-btn:active { transform: scale(0.93); }
+  .cc-btn.minus:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-dim); }
+  .cc-btn.plus:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+  .cc-val {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 34px; font-weight: 700;
+    min-width: 90px; text-align: center;
+    letter-spacing: -1.5px;
+    transition: color 0.2s;
+    line-height: 1;
+  }
+  .cc-val.positive { color: var(--fg); }
+  .cc-val.zero { color: var(--fg-dim); }
+  .cc-val.negative { color: var(--danger); }
+
+  .cc-foot {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+    font-size: 11px; color: var(--fg-dim);
+    flex: 0 0 auto;
+  }
+  .cc-foot button {
+    background: none; border: none; color: var(--fg-dim);
+    cursor: pointer; font-size: 11px; font-family: inherit;
+    padding: 2px 6px; border-radius: 4px; transition: all 0.12s;
+  }
+  .cc-foot button:hover { color: var(--fg); background: var(--bg-hover); }
+
+  .cc-step-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    background: var(--bg);
+    border-radius: 10px;
+    color: var(--fg-dim);
+    white-space: nowrap;
+  }
+
+  /* ── Folder Card ── */
+  .cc.is-folder { cursor: pointer; }
+  .cc.is-folder:hover { border-color: var(--accent-mid); }
+  .cc.is-folder .folder-ico {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--accent-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: var(--accent);
+    flex: 0 0 auto;
+  }
+  .cc.is-folder .cc-name { text-align: left; }
+  .cc.is-folder .cc-foot { flex-direction: row; align-items: center; }
+
+  /* ── Empty State ── */
+  .empty {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 100%; gap: 10px; text-align: center;
+    color: var(--fg-dim); padding: 40px;
+  }
+  .empty i { font-size: 44px; opacity: 0.2; margin-bottom: 6px; }
+  .empty p { font-size: 14px; max-width: 260px; line-height: 1.6; }
+
+  /* ── Modal ── */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(5px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100;
+  }
+  .modal-bg.show { display: flex; }
+  .modal-box {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px;
+    width: 400px; max-width: 92vw;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    animation: mIn 0.2s ease;
+  }
+  .modal-box h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px; font-weight: 700; margin-bottom: 4px;
+  }
+  .modal-box .sub { font-size: 13px; color: var(--fg-muted); margin-bottom: 18px; }
+  .modal-box label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: var(--fg-dim); margin-bottom: 5px;
+    text-transform: uppercase; letter-spacing: 0.8px;
+  }
+  .modal-box input, .modal-box select {
+    width: 100%; padding: 10px 13px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--fg);
+    font-size: 14px; font-family: inherit; outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    margin-bottom: 14px;
+  }
+  .modal-box input:focus, .modal-box select:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+  .modal-box select option { background: var(--bg-raised); }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+
+  .step-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .step-row input { flex: 1; margin-bottom: 0; }
+  .step-row label { margin-bottom: 0; white-space: nowrap; }
+
+  /* Move modal folder list */
+  .move-list {
+    max-height: 220px; overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm); margin-bottom: 14px;
+  }
+  .move-list::-webkit-scrollbar { width: 3px; }
+  .move-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .move-opt {
+    padding: 9px 13px; cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; gap: 8px;
+    transition: background 0.12s; border-bottom: 1px solid var(--border);
+  }
+  .move-opt:last-child { border-bottom: none; }
+  .move-opt:hover { background: var(--bg-hover); }
+  .move-opt.sel { background: var(--accent-dim); color: var(--accent); }
+  .move-opt i { color: var(--accent); font-size: 12px; width: 16px; text-align: center; }
+
+  /* ── Context Menu ── */
+  .ctx {
+    position: fixed;
+    background: var(--bg-raised); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 5px;
+    min-width: 175px; box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+    z-index: 150; display: none;
+  }
+  .ctx.show { display: block; animation: mIn 0.12s ease; }
+  .ctx-i {
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 11px; border-radius: 6px; font-size: 13px;
+    cursor: pointer; transition: background 0.1s; color: var(--fg);
+  }
+  .ctx-i:hover { background: var(--bg-hover); }
+  .ctx-i.dng { color: var(--danger); }
+  .ctx-i.dng:hover { background: var(--danger-dim); }
+  .ctx-i i { width: 15px; text-align: center; font-size: 11px; color: var(--fg-dim); }
+  .ctx-i.dng i { color: var(--danger); }
+  .ctx-sep { height: 1px; background: var(--border); margin: 3px 8px; }
+
+  /* ── Toast ── */
+  .toast-box { position: fixed; bottom: 20px; right: 20px; z-index: 200; display: flex; flex-direction: column-reverse; gap: 8px; }
+  .toast {
+    padding: 10px 16px; background: var(--bg-raised); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font-size: 13px;
+    display: flex; align-items: center; gap: 9px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+    animation: tIn 0.25s ease;
+  }
+  .toast.ok i { color: var(--accent); }
+  .toast.err i { color: var(--danger); }
+  .toast.out { animation: tOut 0.25s ease forwards; }
+
+  @keyframes mIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes tIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes tOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(50px); } }
+
+  @keyframes popNum { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+  .pop { animation: popNum 0.15s ease; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+  @media (max-width: 700px) {
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 20;
+      transform: translateX(-100%);
+      transition: transform 0.2s ease;
+      background: var(--bg);
+      width: 78vw; max-width: 300px;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .mobile-menu-btn { display: inline-flex; }
+    .counter-grid { max-width: 100%; }
+    .topbar-center .stat-pill { display: none; }
+    .search-box { width: 100%; }
+    .search-box:focus-within { width: 100%; }
+    .btn-label { display: none; }
+    .cc { flex-wrap: wrap; }
+    .cc-menu { opacity: 1; position: static; margin-left: auto; order: 3; }
+    .cc-name { padding-right: 0; }
+  }
+  @media (max-width: 460px) {
+    .brand-text span { display: none; }
+    .cc-val { font-size: 28px; min-width: 70px; }
+    .cc-btn { width: 40px; height: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon"><i class="fas fa-hashtag"></i></div>
+    <div class="brand-text">Tally<span>Counter</span></div>
+  </div>
+  <div class="topbar-center">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input id="searchInput" type="text" placeholder="Search counters and folders..." autocomplete="off" aria-label="Search counters and folders">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()" aria-label="Clear search" title="Clear search"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="stat-pill"><i class="fas fa-layer-group"></i> <span class="val" id="statCounters">0</span></div>
+    <div class="stat-pill"><i class="fas fa-sigma"></i> <span class="val" id="statTotal">0</span></div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open folders menu" title="Folders"><i class="fas fa-bars"></i></button>
+    <button class="btn" onclick="openNewCounter()" aria-label="New counter"><i class="fas fa-plus"></i> <span class="btn-label">New Counter</span></button>
+    <button class="btn btn-accent" onclick="openNewFolder()" aria-label="New folder"><i class="fas fa-folder-plus"></i> <span class="btn-label">New Folder</span></button>
+  </div>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<div class="layout">
+  <aside class="sidebar" role="navigation" aria-label="Folders">
+    <div class="sidebar-head">
+      <h3>Categories</h3>
+      <button class="btn btn-ghost btn-sm" onclick="openNewFolder()" title="New folder" aria-label="New folder"><i class="fas fa-plus" style="font-size:11px"></i></button>
+    </div>
+    <div class="sidebar-tree" id="tree"></div>
+  </aside>
+  <main class="content">
+    <div class="content-head">
+      <div class="breadcrumb" id="bc"></div>
+      <div class="content-meta" id="cmeta"></div>
+    </div>
+    <div class="items-scroll" id="itemsArea"></div>
+  </main>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal-box" id="modalBox" role="dialog" aria-modal="true"></div></div>
+<div class="ctx" id="ctx"></div>
+<div class="toast-box" id="toasts"></div>
+
+<script>
+  const STORAGE_KEY = 'tallyCounterData_v1';
+
+  // ── Default (first-run) data ──
+  const defaultFolders = [
+    { id: 1, name: 'Inventory', pid: null },
+    { id: 2, name: 'Electronics', pid: 1 },
+    { id: 3, name: 'Clothing', pid: 1 },
+    { id: 4, name: 'Food & Beverages', pid: 1 },
+    { id: 5, name: 'Event Tracking', pid: null },
+    { id: 6, name: 'Conference 2024', pid: 5 },
+    { id: 7, name: 'Workshop Sessions', pid: 5 },
+    { id: 8, name: 'Personal', pid: null },
+    { id: 9, name: 'Habits', pid: 8 },
+    { id: 10, name: 'Fitness', pid: 8 },
+  ];
+  const defaultCounters = [
+    { id: 50, name: 'Laptops', count: 24, step: 1, fid: 2 },
+    { id: 51, name: 'Monitors', count: 38, step: 1, fid: 2 },
+    { id: 52, name: 'USB Cables', count: 150, step: 5, fid: 2 },
+    { id: 53, name: 'T-Shirts', count: 60, step: 1, fid: 3 },
+    { id: 54, name: 'Jackets', count: 15, step: 1, fid: 3 },
+    { id: 55, name: 'Water Bottles', count: 200, step: 10, fid: 4 },
+    { id: 56, name: 'Snack Packs', count: 85, step: 5, fid: 4 },
+    { id: 57, name: 'Attendees', count: 342, step: 1, fid: 6 },
+    { id: 58, name: 'Speakers', count: 12, step: 1, fid: 6 },
+    { id: 59, name: 'Registrations', count: 28, step: 1, fid: 7 },
+    { id: 60, name: 'Morning Coffee', count: 0, step: 1, fid: 9 },
+    { id: 61, name: 'Pages Read', count: 45, step: 1, fid: 9 },
+    { id: 62, name: 'Push-ups', count: 0, step: 5, fid: 10 },
+    { id: 63, name: 'Running Km', count: 12, step: 1, fid: 10 },
+    { id: 64, name: 'Misc Items', count: 7, step: 1, fid: null },
+  ];
+
+  let uid = 200;
+  let folders, counters, expanded;
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    if (saved && Array.isArray(saved.folders) && Array.isArray(saved.counters)) {
+      folders = saved.folders;
+      counters = saved.counters;
+      expanded = new Set(saved.expanded || []);
+      uid = saved.uid || 200;
+    }
+  } catch (e) { /* corrupted storage — fall through to defaults */ }
+  if (!folders) { folders = defaultFolders; counters = defaultCounters; expanded = new Set([1, 5, 8]); }
+
+  const gid = () => ++uid;
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ folders, counters, uid, expanded: Array.from(expanded) }));
+    } catch (e) { toast('Could not save — storage may be full or blocked', 'err'); }
+  }
+
+  let curFolder = null;
+  let dragId = null;
+  let searchQ = '';
+
+  // ── Helpers ──
+  const childFolders = pid => folders.filter(f => f.pid === pid).sort((a, b) => a.name.localeCompare(b.name));
+  const folderCounters = fid => counters.filter(c => c.fid === fid).sort((a, b) => a.name.localeCompare(b.name));
+  const descIds = fid => { let ids = [fid]; childFolders(fid).forEach(f => ids = ids.concat(descIds(f.id))); return ids; };
+  const countInFolder = fid => counters.filter(c => descIds(fid).includes(c.fid)).length;
+  const folderPath = fid => { const p = []; let c = folders.find(f => f.id === fid); while (c) { p.unshift(c); c = folders.find(f => f.id === c.pid); } return p; };
+  const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+  // ── Toast ──
+  function toast(msg, type = 'ok') {
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<i class="fas ${type === 'ok' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i><span>${msg}</span>`;
+    document.getElementById('toasts').appendChild(t);
+    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 250); }, 2600);
+  }
+
+  // ── Stats ──
+  function updateStats() {
+    document.getElementById('statCounters').textContent = counters.length;
+    document.getElementById('statTotal').textContent = counters.reduce((s, c) => s + c.count, 0).toLocaleString();
+  }
+
+  // ── Render Tree ──
+  function renderTree() {
+    const tree = document.getElementById('tree');
+    let html = '';
+    // Root
+    html += `<div class="ti${curFolder === null ? ' active' : ''}" style="padding-left:14px"
+      onclick="event.stopPropagation();nav(null)"
+      ondragover="event.preventDefault();this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="event.preventDefault();this.classList.remove('drag-over');dropTo(null)"
+      oncontextmenu="event.preventDefault()">
+      <span class="ti-chev blank"><i class="fas fa-chevron-right"></i></span>
+      <span class="ti-ico"><i class="fas fa-house"></i></span>
+      <span class="ti-lbl">All Counters</span>
+      <span class="ti-cnt">${counters.length}</span>
+    </div>`;
+    html += buildTreeLevel(null, 0);
+    tree.innerHTML = html;
+  }
+
+  function buildTreeLevel(pid, depth) {
+    return childFolders(pid).map(f => {
+      const hasCh = childFolders(f.id).length > 0;
+      const isOpen = expanded.has(f.id);
+      const isAct = curFolder === f.id;
+      const cnt = countInFolder(f.id);
+      const pad = 14 + depth * 18;
+      return `<div>
+        <div class="ti${isAct ? ' active' : ''}" style="padding-left:${pad}px" data-fid="${f.id}"
+          onclick="event.stopPropagation();nav(${f.id})"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="event.preventDefault();this.classList.remove('drag-over');dropTo(${f.id})"
+          oncontextmenu="event.preventDefault();folderCtx(event,${f.id})">
+          <span class="ti-chev ${hasCh ? (isOpen ? 'open' : '') : 'blank'}" onclick="event.stopPropagation();togFolder(${f.id})">
+            <i class="fas fa-chevron-right"></i>
+          </span>
+          <span class="ti-ico"><i class="fas ${isOpen ? 'fa-folder-open' : 'fa-folder'}"></i></span>
+          <span class="ti-lbl">${esc(f.name)}</span>
+          <span class="ti-cnt">${cnt}</span>
+        </div>
+        <div class="ti-children ${isOpen ? 'open' : ''}">${buildTreeLevel(f.id, depth + 1)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function nav(fid) { curFolder = fid; renderAll(); closeSidebar(); }
+  function togFolder(fid) { expanded.has(fid) ? expanded.delete(fid) : expanded.add(fid); saveState(); renderTree(); }
+
+  // ── Mobile sidebar ──
+  function toggleSidebar() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('show');
+  }
+  function closeSidebar() {
+    document.querySelector('.sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+  }
+
+  // ── Search ──
+  function clearSearch() {
+    const input = document.getElementById('searchInput');
+    input.value = '';
+    searchQ = '';
+    document.querySelector('.search-box').classList.remove('has-query');
+    renderItems(); renderMeta();
+    input.focus();
+  }
+
+  // ── Breadcrumb ──
+  function renderBC() {
+    const bc = document.getElementById('bc');
+    if (curFolder === null) { bc.innerHTML = '<span class="cur">All Counters</span>'; return; }
+    const path = folderPath(curFolder);
+    let h = `<span onclick="nav(null)">All Counters</span>`;
+    path.forEach((f, i) => {
+      h += `<span class="sep"><i class="fas fa-chevron-right"></i></span>`;
+      h += i === path.length - 1
+        ? `<span class="cur">${esc(f.name)}</span>`
+        : `<span onclick="nav(${f.id})">${esc(f.name)}</span>`;
+    });
+    bc.innerHTML = h;
+  }
+
+  function renderMeta() {
+    const dirs = childFolders(curFolder).length;
+    const cnts = folderCounters(curFolder).length;
+    let parts = [];
+    if (dirs) parts.push(`${dirs} folder${dirs > 1 ? 's' : ''}`);
+    if (cnts) parts.push(`${cnts} counter${cnts > 1 ? 's' : ''}`);
+    document.getElementById('cmeta').textContent = parts.join('  ·  ') || 'Empty';
+  }
+
+  // ── Render Items ──
+  function renderItems() {
+    const area = document.getElementById('itemsArea');
+    let dirs = childFolders(curFolder);
+    let cnts = folderCounters(curFolder);
+    if (searchQ) {
+      const q = searchQ.toLowerCase();
+      dirs = dirs.filter(f => f.name.toLowerCase().includes(q));
+      cnts = cnts.filter(c => c.name.toLowerCase().includes(q));
+    }
+    if (!dirs.length && !cnts.length) {
+      area.innerHTML = `<div class="empty">
+        <i class="fas ${searchQ ? 'fa-search' : 'fa-cubes'}"></i>
+        <p>${searchQ ? 'No results for "' + esc(searchQ) + '"' : 'Nothing here yet. Add counters or subfolders.'}</p>
+        ${!searchQ ? `<div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn btn-sm" onclick="openNewCounter()"><i class="fas fa-plus"></i> New Counter</button>
+          <button class="btn btn-sm btn-accent" onclick="openNewFolder()"><i class="fas fa-folder-plus"></i> New Folder</button>
+        </div>` : ''}
+      </div>`;
+      return;
+    }
+    let h = '<div class="counter-grid">';
+    dirs.forEach(f => {
+      const cnt = countInFolder(f.id);
+      const subs = childFolders(f.id).length;
+      h += `<div class="cc is-folder" ondblclick="nav(${f.id})" oncontextmenu="event.preventDefault();folderCtx(event,${f.id})">
+        <div class="cc-menu"><button onclick="event.stopPropagation();folderCtx(event,${f.id})" aria-label="Options"><i class="fas fa-ellipsis-v"></i></button></div>
+        <div class="folder-ico"><i class="fas fa-folder"></i></div>
+        <div class="cc-name" title="${esc(f.name)}">${esc(f.name)}</div>
+        <div class="cc-foot">
+          <span>${cnt} counter${cnt !== 1 ? 's' : ''}</span>
+          ${subs ? `<span>${subs} sub</span>` : ''}
+        </div>
+      </div>`;
+    });
+    cnts.forEach(c => {
+      const cls = c.count > 0 ? 'positive' : c.count < 0 ? 'negative' : 'zero';
+      h += `<div class="cc" data-cid="${c.id}" draggable="true"
+        ondragstart="dragStart(event,${c.id})" ondragend="dragEnd(event)"
+        oncontextmenu="event.preventDefault();counterCtx(event,${c.id})">
+        <div class="cc-menu">
+          <button onclick="event.stopPropagation();openEditCounter(${c.id})" title="Edit" aria-label="Edit"><i class="fas fa-pen"></i></button>
+          <button class="del" onclick="event.stopPropagation();deleteCounter(${c.id})" title="Delete" aria-label="Delete"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="cc-name" title="${esc(c.name)}">${esc(c.name)}</div>
+        <div class="cc-display">
+          <button class="cc-btn minus" onclick="event.stopPropagation();changeCount(${c.id},-1)" aria-label="Decrease">−</button>
+          <div class="cc-val ${cls}" id="val-${c.id}">${c.count.toLocaleString()}</div>
+          <button class="cc-btn plus" onclick="event.stopPropagation();changeCount(${c.id},1)" aria-label="Increase">+</button>
+        </div>
+        <div class="cc-foot">
+          <button onclick="event.stopPropagation();resetCounter(${c.id})">Reset</button>
+          <span class="cc-step-badge">Step: ${c.step}</span>
+        </div>
+      </div>`;
+    });
+    h += '</div>';
+    area.innerHTML = h;
+  }
+
+  // ── Counter Actions ──
+  function changeCount(id, dir) {
+    const c = counters.find(x => x.id === id);
+    if (!c) return;
+    c.count += dir * c.step;
+    const el = document.getElementById(`val-${id}`);
+    if (el) {
+      el.textContent = c.count.toLocaleString();
+      el.className = `cc-val ${c.count > 0 ? 'positive' : c.count < 0 ? 'negative' : 'zero'}`;
+      el.classList.remove('pop');
+      void el.offsetWidth; // reflow
+      el.classList.add('pop');
+    }
+    updateStats();
+    saveState();
+  }
+
+  function resetCounter(id) {
+    const c = counters.find(x => x.id === id);
+    if (!c) return;
+    c.count = 0;
+    renderItems();
+    updateStats();
+    saveState();
+    toast(`"${c.name}" reset to 0`);
+  }
+
+  // ── Drag & Drop ──
+  function dragStart(e, id) { dragId = id; e.dataTransfer.effectAllowed = 'move'; e.target.closest('.cc').classList.add('dragging'); }
+  function dragEnd(e) { dragId = null; document.querySelectorAll('.cc.dragging').forEach(el => el.classList.remove('dragging')); document.querySelectorAll('.ti.drag-over').forEach(el => el.classList.remove('drag-over')); }
+  function dropTo(fid) {
+    if (dragId === null) return;
+    const c = counters.find(x => x.id === dragId);
+    if (!c || c.fid === fid) return;
+    const target = fid ? folders.find(f => f.id === fid)?.name : 'All Counters';
+    c.fid = fid;
+    dragId = null;
+    saveState();
+    toast(`Moved "${c.name}" to ${target}`);
+    renderAll();
+  }
+
+  // ── Context Menus ──
+  function hideCtx() { document.getElementById('ctx').classList.remove('show'); }
+  function posCtx(menu, x, y) {
+    menu.style.left = x + 'px'; menu.style.top = y + 'px';
+    requestAnimationFrame(() => { const r = menu.getBoundingClientRect(); if (r.right > innerWidth) menu.style.left = (x - r.width) + 'px'; if (r.bottom > innerHeight) menu.style.top = (y - r.height) + 'px'; });
+  }
+
+  function folderCtx(e, fid) {
+    hideCtx();
+    const f = folders.find(x => x.id === fid);
+    const menu = document.getElementById('ctx');
+    menu.innerHTML = `
+      <div class="ctx-i" onclick="nav(${fid});hideCtx()"><i class="fas fa-folder-open"></i> Open</div>
+      <div class="ctx-i" onclick="openSubfolder(${fid});hideCtx()"><i class="fas fa-folder-plus"></i> New Subfolder</div>
+      <div class="ctx-i" onclick="openCounterIn(${fid});hideCtx()"><i class="fas fa-plus"></i> New Counter Here</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-i" onclick="openRenameFolder(${fid});hideCtx()"><i class="fas fa-pen"></i> Rename</div>
+      <div class="ctx-i dng" onclick="deleteFolder(${fid});hideCtx()"><i class="fas fa-trash"></i> Delete</div>`;
+    posCtx(menu, e.clientX, e.clientY);
+    menu.classList.add('show');
+  }
+
+  function counterCtx(e, cid) {
+    hideCtx();
+    const menu = document.getElementById('ctx');
+    menu.innerHTML = `
+      <div class="ctx-i" onclick="openEditCounter(${cid});hideCtx()"><i class="fas fa-pen"></i> Edit</div>
+      <div class="ctx-i" onclick="openMoveCounter(${cid});hideCtx()"><i class="fas fa-arrows-alt"></i> Move To...</div>
+      <div class="ctx-sep"></div>
+      <div class="ctx-i" onclick="resetCounter(${cid});hideCtx()"><i class="fas fa-rotate-left"></i> Reset to Zero</div>
+      <div class="ctx-i dng" onclick="deleteCounter(${cid});hideCtx()"><i class="fas fa-trash"></i> Delete</div>`;
+    posCtx(menu, e.clientX, e.clientY);
+    menu.classList.add('show');
+  }
+
+  document.addEventListener('click', hideCtx);
+
+  // ── Modals ──
+  function showModal(html) {
+    document.getElementById('modalBox').innerHTML = html;
+    document.getElementById('modalBg').classList.add('show');
+    const inp = document.querySelector('#modalBox input');
+    if (inp) setTimeout(() => inp.focus(), 80);
+  }
+  function hideModal() { document.getElementById('modalBg').classList.remove('show'); }
+  document.getElementById('modalBg').addEventListener('click', e => { if (e.target === e.currentTarget) hideModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { hideModal(); hideCtx(); } });
+
+  // New Folder
+  function openNewFolder() {
+    const where = curFolder !== null ? `inside "${esc(folders.find(f => f.id === curFolder).name)}"` : 'at root';
+    showModal(`<h3>New Folder</h3><p class="sub">Create a category ${where}</p>
+      <label for="fName">Folder Name</label>
+      <input id="fName" placeholder="e.g. Components" onkeydown="if(event.key==='Enter')createFolder()">
+      <div class="modal-foot"><button class="btn" onclick="hideModal()">Cancel</button><button class="btn btn-accent" onclick="createFolder()">Create</button></div>`);
+  }
+  function openSubfolder(pid) {
+    const p = folders.find(f => f.id === pid);
+    showModal(`<h3>New Subfolder</h3><p class="sub">Inside "${esc(p.name)}"</p>
+      <label for="fName">Name</label>
+      <input id="fName" placeholder="e.g. Components" onkeydown="if(event.key==='Enter')createFolder(${pid})">
+      <div class="modal-foot"><button class="btn" onclick="hideModal()">Cancel</button><button class="btn btn-accent" onclick="createFolder(${pid})">Create</button></div>`);
+  }
+  function createFolder(overridePid) {
+    const v = document.getElementById('fName').value.trim();
+    if (!v) { document.getElementById('fName').style.borderColor = 'var(--danger)'; return; }
+    const pid = overridePid !== undefined ? overridePid : curFolder;
+    folders.push({ id: gid(), name: v, pid });
+    if (pid !== null) expanded.add(pid);
+    saveState();
+    hideModal(); toast(`Folder "${v}" created`); renderAll();
+  }
+
+  // Rename Folder
+  function openRenameFolder(fid) {
+    const f = folders.find(x => x.id === fid);
+    showModal(`<h3>Rename Folder</h3><p class="sub">Rename "${esc(f.name)}"</p>
+      <label for="fName">New Name</label>
+      <input id="fName" value="${esc(f.name)}" onkeydown="if(event.key==='Enter')renameFolder(${fid})">
+      <div class="modal-foot"><button class="btn" onclick="hideModal()">Cancel</button><button class="btn btn-accent" onclick="renameFolder(${fid})">Rename</button></div>`);
+  }
+  function renameFolder(fid) {
+    const v = document.getElementById('fName').value.trim();
+    if (!v) { document.getElementById('fName').style.borderColor = 'var(--danger)'; return; }
+    folders.find(x => x.id === fid).name = v;
+    saveState();
+    hideModal(); toast(`Renamed to "${v}"`); renderAll();
+  }
+
+  // Delete Folder
+  function deleteFolder(fid) {
+    const f = folders.find(x => x.id === fid);
+    const dids = descIds(fid);
+    const cnt = counters.filter(c => dids.includes(c.fid)).length;
+    const subCnt = dids.length - 1;
+    let msg = `Delete "${f.name}"`;
+    if (subCnt || cnt) msg += ` along with ${subCnt} subfolder${subCnt !== 1 ? 's' : ''} and ${cnt} counter${cnt !== 1 ? 's' : ''}`;
+    msg += '? This cannot be undone.';
+    showModal(`<h3>Delete Folder</h3><p class="sub">${msg}</p>
+      <div class="modal-foot"><button class="btn" onclick="hideModal()">Cancel</button><button class="btn btn-danger" onclick="confirmDelFolder(${fid})"><i class="fas fa-trash"></i> Delete</button></div>`);
+  }
+  function confirmDelFolder(fid) {
+    const f = folders.find(x => x.id === fid);
+    const dids = descIds(fid);
+    counters = counters.filter(c => !dids.includes(c.fid));
+    folders = folders.filter(x => !dids.includes(x.id));
+    if (curFolder !== null && dids.includes(curFolder)) curFolder = f.pid;
+    saveState();
+    hideModal(); toast(`"${f.name}" deleted`, 'err'); renderAll();
+  }
+
+  // New Counter
+  function openNewCounter() {
+    const where = curFolder !== null ? `in "${esc(folders.find(f => f.id === curFolder).name)}"` : 'at root';
+    showModal(`<h3>New Counter</h3><p class="sub">Add a tally counter ${where}</p>
+      <label for="cName">Counter Name</label>
+      <input id="cName" placeholder="e.g. Red Widgets">
+      <div class="step-row"><label for="cStep">Step Size</label><input id="cStep" type="number" min="1" value="1"></div>
+      <div class="modal-foot"><button class="btn" onclick="hideModal()">Cancel</button><button class="btn btn-accent" onclick="createCounter()">Create</button></div>`);
+  }
+  function openCounterIn(fid) {
+    const f = folders.find(x => x.id === fid);
+    showModal(`<h3>New Counter</h3><p class="sub">In "${esc(f.name)}"</p>
+      <label for="cName">Counter Name</label>
+      <input id="cName" placeholder="e.g. Red Widgets">
+      <div class="step-row"><label for="cStep">Step Size</label><input id="cStep" type="number" min="1" value="1"></div>
+      <div class="modal-foot"><button class="btn" onclick="hideModal()">Cancel</button><button class="btn btn-accent" onclick="createCounter(${fid})">Create</button></div>`);
+  }
+  function createCounter(overrideFid) {
+    const name = document.getElementById('cName').value.trim();
+    if (!name) { document.getElementById('cName').style.borderColor = 'var(--danger)'; return; }
+    let step = parseInt(document.getElementById('cStep').value) || 1;
+    if (step < 1) step = 1;
+    counters.push({ id: gid(), name, count: 0, step, fid: overrideFid !== undefined ? overrideFid : curFolder });
+    saveState();
+    hideModal(); toast(`"${name}" created`); renderAll();
+  }
+
+  // Edit Counter
+  function openEditCounter(cid) {
+    const c = counters.find(x => x.id === cid);
+    showModal(`<h3>Edit Counter</h3><p class="sub">Modify "${esc(c.name)}"</p>
+      <label for="cName">Name</label>
+      <input id="cName" value="${esc(c.name)}">
+      <div class="step-row"><label for="cStep">Step Size</label><input id="cStep" type="number" min="1" value="${c.step}"></div>
+      <div class="step-row"><label for="cVal">Set Count</label><input id="cVal" type="number" value="${c.count}"></div>
+      <div class="modal-foot"><button class="btn" onclick="hideModal()">Cancel</button><button class="btn btn-accent" onclick="updateCounter(${cid})">Save</button></div>`);
+  }
+  function updateCounter(cid) {
+    const name = document.getElementById('cName').value.trim();
+    if (!name) { document.getElementById('cName').style.borderColor = 'var(--danger)'; return; }
+    let step = parseInt(document.getElementById('cStep').value) || 1;
+    if (step < 1) step = 1;
+    const val = parseInt(document.getElementById('cVal').value) || 0;
+    const c = counters.find(x => x.id === cid);
+    c.name = name; c.step = step; c.count = val;
+    saveState();
+    hideModal(); toast(`"${name}" updated`); renderAll();
+  }
+
+  // Delete Counter
+  function deleteCounter(cid) {
+    const c = counters.find(x => x.id === cid);
+    showModal(`<h3>Delete Counter</h3><p class="sub">Delete "${esc(c.name)}"? Its current count of ${c.count.toLocaleString()} will be lost. This cannot be undone.</p>
+      <div class="modal-foot"><button class="btn" onclick="hideModal()">Cancel</button><button class="btn btn-danger" onclick="confirmDelCounter(${cid})"><i class="fas fa-trash"></i> Delete</button></div>`);
+  }
+  function confirmDelCounter(cid) {
+    const c = counters.find(x => x.id === cid);
+    counters = counters.filter(x => x.id !== cid);
+    saveState();
+    hideModal();
+    toast(`"${c.name}" deleted`, 'err');
+    renderAll();
+  }
+
+  // Move Counter
+  function openMoveCounter(cid) {
+    const c = counters.find(x => x.id === cid);
+    let list = `<div class="move-opt${c.fid === null ? ' sel' : ''}" onclick="pickMove(this,null)" data-t="null"><i class="fas fa-house"></i> All Counters</div>`;
+    list += buildMoveOpts(null, 0, c.fid);
+    showModal(`<h3>Move Counter</h3><p class="sub">Move "${esc(c.name)}" to a category</p>
+      <label>Destination</label>
+      <div class="move-list" id="moveList">${list}</div>
+      <div class="modal-foot"><button class="btn" onclick="hideModal()">Cancel</button><button class="btn btn-accent" onclick="confirmMove(${cid})">Move</button></div>`);
+  }
+  function buildMoveOpts(pid, depth, curFid) {
+    return childFolders(pid).map(f => {
+      const pad = depth * 18;
+      return `<div class="move-opt${f.id === curFid ? ' sel' : ''}" style="padding-left:${13 + pad}px" onclick="pickMove(this,${f.id})" data-t="${f.id}"><i class="fas fa-folder"></i> ${esc(f.name)}</div>${buildMoveOpts(f.id, depth + 1, curFid)}`;
+    }).join('');
+  }
+  function pickMove(el, fid) {
+    document.querySelectorAll('.move-opt').forEach(e => e.classList.remove('sel'));
+    el.classList.add('sel');
+  }
+  function confirmMove(cid) {
+    const c = counters.find(x => x.id === cid);
+    const sel = document.querySelector('.move-opt.sel');
+    const target = sel ? (sel.dataset.t === 'null' ? null : parseInt(sel.dataset.t)) : c.fid;
+    if (target === c.fid) { hideModal(); return; }
+    const tName = target ? folders.find(f => f.id === target)?.name : 'All Counters';
+    c.fid = target;
+    saveState();
+    hideModal(); toast(`Moved "${c.name}" to ${tName}`); renderAll();
+  }
+
+  document.addEventListener('input', e => {
+    if (e.target.id === 'searchInput') {
+      searchQ = e.target.value.trim();
+      document.querySelector('.search-box').classList.toggle('has-query', searchQ.length > 0);
+      renderItems(); renderMeta();
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+      e.preventDefault();
+      document.getElementById('searchInput').focus();
+    }
+  });
+
+  // ── Render All ──
+  function renderAll() { renderTree(); renderBC(); renderMeta(); renderItems(); updateStats(); }
+  renderAll();
+</script>
+</body>
+</html>
