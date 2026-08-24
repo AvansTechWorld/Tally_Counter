@@ -60,11 +60,6 @@
     color: var(--orange); font-size: 16px;
     position: relative;
   }
-  .brand-icon::after {
-    content: ''; position: absolute; inset: 0; border-radius: 9px;
-    background: repeating-linear-gradient(90deg, transparent 0 3px, rgba(255,90,31,0.35) 3px 4px);
-    opacity: 0.5; pointer-events: none;
-  }
   .brand-text {
     font-weight: 800; font-size: 19px; letter-spacing: -0.4px; text-transform: uppercase;
   }
@@ -87,35 +82,6 @@
   .stat-pill i { font-size: 11px; color: var(--ink-faint); }
 
   .topbar-actions { display: flex; gap: 8px; align-items: center; }
-
-  /* ── Search Box ── */
-  .search-box {
-    display: flex; align-items: center; gap: 8px;
-    padding: 7px 12px;
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 20px;
-    width: 230px;
-    transition: border-color 0.15s, box-shadow 0.15s, width 0.15s;
-  }
-  .search-box:focus-within {
-    border-color: var(--orange);
-    box-shadow: 0 0 0 3px var(--orange-tint);
-    width: 270px;
-  }
-  .search-box i.fa-search { font-size: 12px; color: var(--ink-faint); flex-shrink: 0; }
-  .search-box input {
-    background: none; border: none; outline: none;
-    color: var(--ink); font-family: inherit; font-size: 13px;
-    flex: 1; min-width: 0;
-  }
-  .search-box input::placeholder { color: var(--ink-faint); }
-  .search-clear {
-    display: none; border: none; background: none; color: var(--ink-faint);
-    cursor: pointer; font-size: 11px; padding: 2px; flex-shrink: 0;
-  }
-  .search-clear:hover { color: var(--ink); }
-  .search-box.has-query .search-clear { display: block; }
 
   .mobile-menu-btn { display: none; }
   .sidebar-overlay {
@@ -232,12 +198,13 @@
 
   .counter-grid { display: grid; grid-template-columns: 1fr; gap: 12px; max-width: 680px; }
 
-  /* ── Item Card (barcode-tag signature) ── */
+  /* ── Item Card (status-edge signature: the left edge color reads the count at a glance) ── */
   .cc {
     background: var(--card);
     border: 1px solid var(--line);
+    border-left: 4px solid var(--line-strong);
     border-radius: var(--radius);
-    padding: 16px 20px 16px 26px;
+    padding: 16px 20px;
     position: relative;
     transition: all 0.16s;
     display: flex;
@@ -246,16 +213,10 @@
     box-shadow: var(--shadow);
     overflow: hidden;
   }
-  .cc::before {
-    content: '';
-    position: absolute; left: 0; top: 0; bottom: 0; width: 8px;
-    background: repeating-linear-gradient(180deg,
-      var(--ink) 0 2px, transparent 2px 4px,
-      var(--ink) 4px 5px, transparent 5px 9px,
-      var(--ink) 9px 10px, transparent 10px 12px);
-    opacity: 0.85;
-  }
-  .cc:hover { border-color: var(--orange); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(255,90,31,0.12), var(--shadow); }
+  .cc.cc-match { border-left-color: var(--ok); }
+  .cc.cc-over { border-left-color: var(--orange); }
+  .cc.cc-short { border-left-color: var(--danger); }
+  .cc:hover { border-top-color: var(--orange); border-right-color: var(--orange); border-bottom-color: var(--orange); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(255,90,31,0.12), var(--shadow); }
   .cc.dragging { opacity: 0.35; }
   .cc-menu { position: absolute; top: 10px; right: 10px; opacity: 0; transition: opacity 0.15s; display: flex; gap: 2px; }
   .cc:hover .cc-menu, .cc:focus-within .cc-menu { opacity: 1; }
@@ -322,9 +283,7 @@
   .cc-step-badge { font-size: 10px; padding: 2px 8px; background: var(--paper); border: 1px solid var(--line); border-radius: 10px; color: var(--ink-soft); white-space: nowrap; font-family: 'IBM Plex Mono', monospace; }
 
   /* ── Location (folder) Card ── */
-  .cc.is-folder { cursor: pointer; padding-left: 20px; }
-  .cc.is-folder::before { display: none; }
-  .cc.is-folder:hover { border-color: var(--orange); }
+  .cc.is-folder { cursor: pointer; border-left-color: var(--orange); }
   .cc.is-folder .folder-ico {
     width: 42px; height: 42px; border-radius: 10px;
     background: var(--ink); color: var(--orange);
@@ -400,8 +359,6 @@
     .mobile-menu-btn { display: inline-flex; }
     .counter-grid { max-width: 100%; }
     .topbar-center .stat-pill { display: none; }
-    .search-box { width: 100%; }
-    .search-box:focus-within { width: 100%; }
     .btn-label { display: none; }
     .cc { flex-wrap: wrap; }
     .cc-menu { opacity: 1; position: static; margin-left: auto; order: 3; }
@@ -416,20 +373,15 @@
 
 <div class="topbar">
   <div class="brand">
+    <button class="btn btn-ghost mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open locations menu" title="Locations"><i class="fas fa-bars"></i></button>
     <div class="brand-icon"><i class="fas fa-boxes-stacked"></i></div>
     <div class="brand-text">Stock<span>Take</span><span class="tiny">Physical Inventory</span></div>
   </div>
   <div class="topbar-center">
-    <div class="search-box">
-      <i class="fas fa-search"></i>
-      <input id="searchInput" type="text" placeholder="Search items and locations..." autocomplete="off" aria-label="Search items and locations">
-      <button class="search-clear" id="searchClear" onclick="clearSearch()" aria-label="Clear search" title="Clear search"><i class="fas fa-times"></i></button>
-    </div>
     <div class="stat-pill"><i class="fas fa-boxes-stacked"></i> <span class="val" id="statCounters">0</span> items</div>
     <div class="stat-pill" id="statVarPill"><i class="fas fa-triangle-exclamation"></i> <span class="val" id="statVar">0</span> off-count</div>
   </div>
   <div class="topbar-actions">
-    <button class="btn btn-ghost mobile-menu-btn" onclick="toggleSidebar()" aria-label="Open locations menu" title="Locations"><i class="fas fa-bars"></i></button>
     <button class="btn" onclick="exportCSV()" aria-label="Export CSV" title="Export CSV"><i class="fas fa-file-export"></i> <span class="btn-label">Export</span></button>
     <button class="btn" onclick="openNewFolder()" aria-label="New location"><i class="fas fa-map-pin"></i> <span class="btn-label">New Location</span></button>
     <button class="btn btn-accent" onclick="openNewCounter()" aria-label="New item"><i class="fas fa-plus"></i> <span class="btn-label">New Item</span></button>
@@ -509,7 +461,6 @@
 
   let curFolder = null;
   let dragId = null;
-  let searchQ = '';
 
   // ── Helpers ──
   const childFolders = pid => folders.filter(f => f.pid === pid).sort((a, b) => a.name.localeCompare(b.name));
@@ -596,15 +547,6 @@
     document.getElementById('sidebarOverlay').classList.remove('show');
   }
 
-  function clearSearch() {
-    const input = document.getElementById('searchInput');
-    input.value = '';
-    searchQ = '';
-    document.querySelector('.search-box').classList.remove('has-query');
-    renderItems(); renderMeta();
-    input.focus();
-  }
-
   function renderBC() {
     const bc = document.getElementById('bc');
     if (curFolder === null) { bc.innerHTML = '<span class="cur">All Items</span>'; return; }
@@ -633,19 +575,14 @@
     const area = document.getElementById('itemsArea');
     let dirs = childFolders(curFolder);
     let cnts = folderCounters(curFolder);
-    if (searchQ) {
-      const q = searchQ.toLowerCase();
-      dirs = dirs.filter(f => f.name.toLowerCase().includes(q));
-      cnts = cnts.filter(c => c.name.toLowerCase().includes(q));
-    }
     if (!dirs.length && !cnts.length) {
       area.innerHTML = `<div class="empty">
-        <i class="fas ${searchQ ? 'fa-search' : 'fa-boxes-stacked'}"></i>
-        <p>${searchQ ? 'No results for "' + esc(searchQ) + '"' : 'Nothing counted here yet. Add an item or a location.'}</p>
-        ${!searchQ ? `<div style="display:flex;gap:8px;margin-top:6px">
+        <i class="fas fa-boxes-stacked"></i>
+        <p>Nothing counted here yet. Add an item or a location.</p>
+        <div style="display:flex;gap:8px;margin-top:6px">
           <button class="btn btn-sm btn-accent" onclick="openNewCounter()"><i class="fas fa-plus"></i> New Item</button>
           <button class="btn btn-sm" onclick="openNewFolder()"><i class="fas fa-map-pin"></i> New Location</button>
-        </div>` : ''}
+        </div>
       </div>`;
       return;
     }
@@ -666,7 +603,7 @@
     cnts.forEach(c => {
       const v = variance(c);
       const cls = varClass(v);
-      h += `<div class="cc" data-cid="${c.id}" draggable="true"
+      h += `<div class="cc cc-${cls}" data-cid="${c.id}" draggable="true"
         ondragstart="dragStart(event,${c.id})" ondragend="dragEnd(event)"
         oncontextmenu="event.preventDefault();counterCtx(event,${c.id})">
         <div class="cc-menu">
@@ -976,20 +913,6 @@
     URL.revokeObjectURL(url);
     toast('Stock take exported to CSV');
   }
-
-  document.addEventListener('input', e => {
-    if (e.target.id === 'searchInput') {
-      searchQ = e.target.value.trim();
-      document.querySelector('.search-box').classList.toggle('has-query', searchQ.length > 0);
-      renderItems(); renderMeta();
-    }
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
-      e.preventDefault();
-      document.getElementById('searchInput').focus();
-    }
-  });
 
   // ── Render All ──
   function renderAll() { renderTree(); renderBC(); renderMeta(); renderItems(); updateStats(); }
