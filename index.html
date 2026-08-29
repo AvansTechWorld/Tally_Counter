@@ -105,12 +105,8 @@
     padding:12px 14px; border-bottom:1px solid var(--paper-line); color:#242017;
   }
   .ledger-row:last-child{border-bottom:none;}
-  .item-name{flex:1; font-weight:600; font-size:14.5px; word-break:break-word; cursor:text;}
-  .tally-marks{
-    font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--rust);
-    min-width:70px; letter-spacing:1px;
-  }
-  .count-controls{display:flex; align-items:center; gap:6px;}
+  .item-name{flex:1; min-width:0; font-weight:600; font-size:14.5px; word-break:break-word; cursor:text;}
+  .count-controls{display:flex; align-items:center; gap:6px; flex-shrink:0;}
   .count-btn{
     width:30px; height:30px; border-radius:7px; border:1px solid #d8cfba;
     background:#fff; color:#242017; font-size:16px; font-weight:700; cursor:pointer;
@@ -121,7 +117,7 @@
     font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:16px;
     min-width:34px; text-align:center; cursor:text;
   }
-  .row-del{background:none; border:none; color:#b7ac92; cursor:pointer; font-size:16px; padding:4px 6px;}
+  .row-del{background:none; border:none; color:#b7ac92; cursor:pointer; font-size:16px; padding:4px 6px; flex-shrink:0;}
   .row-del:hover{color:var(--rust);}
 
   .empty-state{
@@ -266,15 +262,6 @@ function folderItems(folderId){
   return Object.values(data.items).filter(i=>i.folderId === folderId);
 }
 
-function tallyMarks(count){
-  const groups = Math.floor(count/5);
-  const rem = count % 5;
-  let out = '';
-  for(let i=0;i<groups;i++) out += '𝍿 ';
-  out += '|'.repeat(rem);
-  return out || '—';
-}
-
 function render(){
   renderCrumbs();
   const main = document.getElementById('main');
@@ -304,7 +291,6 @@ function render(){
     html += items.map(it=>`
       <div class="ledger-row">
         <div class="item-name" contenteditable="true" onblur="renameItem('${it.id}', this.textContent)" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">${escapeHtml(it.name)}</div>
-        <div class="tally-marks">${tallyMarks(it.count)}</div>
         <div class="count-controls">
           <button class="count-btn" onclick="adjustCount('${it.id}', -1)">−</button>
           <span class="count-num" contenteditable="true" onblur="setCountDirect('${it.id}', this.textContent)" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">${it.count}</span>
@@ -435,7 +421,6 @@ function handleSearch(){
           <div class="item-name" style="cursor:pointer;" onclick="goToFolder('${it.folderId}')">${escapeHtml(it.name)}</div>
           <div style="font-size:11px; color:#8a8069; font-family:'IBM Plex Mono',monospace;">${escapeHtml(path)}</div>
         </div>
-        <div class="tally-marks">${tallyMarks(it.count)}</div>
         <div class="count-controls">
           <button class="count-btn" onclick="adjustCount('${it.id}', -1); handleSearch();">−</button>
           <span class="count-num">${it.count}</span>
