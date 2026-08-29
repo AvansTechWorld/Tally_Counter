@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Tally Counter — Inventory</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1e2126">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#1e2126;
+    --paper:#f7f4ec;
+    --paper-line:#e5ded0;
+    --card:#26292f;
+    --ink:#f3f1ea;
+    --ink-dim:#a7adb8;
+    --folder:#d9a441;
+    --folder-dim:#8a6a2b;
+    --rust:#c1440e;
+    --safe:#4a9d6f;
+    --line:#383c44;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; height:100%; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; -webkit-tap-highlight-color:transparent;}
+  #app{display:flex; flex-direction:column; height:100vh; height:100dvh;}
+
+  /* ---- Top bar ---- */
+  header{
+    padding:16px 18px 12px;
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    flex-shrink:0;
+  }
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand .marks{font-family:'IBM Plex Mono',monospace; color:var(--folder); font-size:20px; letter-spacing:2px;}
+  h1{font-family:'Oswald',sans-serif; font-weight:700; font-size:20px; text-transform:uppercase; letter-spacing:0.04em; margin:0;}
+  .header-actions{display:flex; gap:8px;}
+  .icon-btn{
+    background:var(--card); border:1px solid var(--line); color:var(--ink-dim);
+    border-radius:8px; padding:8px 10px; cursor:pointer; font-size:13px;
+    font-family:'Inter',sans-serif;
+  }
+  .icon-btn:hover{color:var(--ink); border-color:var(--ink-dim);}
+
+  /* ---- Breadcrumb ---- */
+  .crumbs{
+    padding:10px 18px; display:flex; gap:6px; align-items:center; flex-wrap:wrap;
+    font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink-dim);
+    border-bottom:1px solid var(--line); flex-shrink:0;
+  }
+  .crumb{cursor:pointer; padding:3px 8px; border-radius:6px;}
+  .crumb:hover{background:var(--card); color:var(--ink);}
+  .crumb.current{color:var(--folder); font-weight:600;}
+  .crumb-sep{color:var(--line);}
+
+  /* ---- Toolbar ---- */
+  .toolbar{
+    padding:12px 18px; display:flex; gap:10px; flex-wrap:wrap; flex-shrink:0;
+  }
+  .search-input{
+    flex:1; min-width:140px;
+    background:var(--card); border:1px solid var(--line); color:var(--ink);
+    border-radius:8px; padding:10px 14px; font-family:'Inter',sans-serif; font-size:14px;
+  }
+  .search-input:focus{outline:none; border-color:var(--folder);}
+  .btn{
+    font-family:'Inter',sans-serif; font-weight:600; font-size:14px;
+    padding:10px 16px; border-radius:8px; border:none; cursor:pointer;
+    background:var(--folder); color:#241c07;
+  }
+  .btn.secondary{background:var(--card); color:var(--ink); border:1px solid var(--line);}
+  .btn:active{transform:translateY(1px);}
+
+  /* ---- Content area ---- */
+  main{flex:1; overflow-y:auto; padding:6px 18px 100px;}
+  .section-label{
+    font-family:'Oswald',sans-serif; font-size:12px; text-transform:uppercase;
+    letter-spacing:0.12em; color:var(--ink-dim); margin:18px 0 8px;
+  }
+
+  /* Folder tiles */
+  .folder-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px;}
+  .folder-tile{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:14px; cursor:pointer; position:relative;
+    border-left:4px solid var(--folder);
+  }
+  .folder-tile:hover{border-color:var(--folder-dim);}
+  .folder-tile .fname{font-weight:600; font-size:14.5px; padding-right:20px; word-break:break-word;}
+  .folder-tile .fcount{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-dim); margin-top:6px;}
+  .tile-menu-btn{
+    position:absolute; top:8px; right:8px; background:none; border:none;
+    color:var(--ink-dim); cursor:pointer; font-size:16px; padding:2px 6px; border-radius:6px;
+  }
+  .tile-menu-btn:hover{background:var(--bg); color:var(--ink);}
+
+  /* Ledger rows (items) */
+  .ledger{background:var(--paper); border-radius:10px; overflow:hidden;}
+  .ledger-row{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px; border-bottom:1px solid var(--paper-line); color:#242017;
+  }
+  .ledger-row:last-child{border-bottom:none;}
+  .item-name{flex:1; font-weight:600; font-size:14.5px; word-break:break-word; cursor:text;}
+  .tally-marks{
+    font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--rust);
+    min-width:70px; letter-spacing:1px;
+  }
+  .count-controls{display:flex; align-items:center; gap:6px;}
+  .count-btn{
+    width:30px; height:30px; border-radius:7px; border:1px solid #d8cfba;
+    background:#fff; color:#242017; font-size:16px; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .count-btn:active{transform:translateY(1px);}
+  .count-num{
+    font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:16px;
+    min-width:34px; text-align:center; cursor:text;
+  }
+  .row-del{background:none; border:none; color:#b7ac92; cursor:pointer; font-size:16px; padding:4px 6px;}
+  .row-del:hover{color:var(--rust);}
+
+  .empty-state{
+    text-align:center; color:var(--ink-dim); padding:40px 20px;
+    font-family:'Inter',sans-serif; font-size:14px;
+  }
+
+  /* ---- Bottom action bar (mobile-friendly) ---- */
+  .fab-row{
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--bg); border-top:1px solid var(--line);
+    padding:12px 18px calc(12px + env(safe-area-inset-bottom));
+    display:flex; gap:10px;
+  }
+  .fab-row .btn{flex:1;}
+
+  /* ---- Modal ---- */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(0,0,0,0.55);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .modal-backdrop.show{display:flex;}
+  .modal{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:22px; width:min(380px, 100%);
+  }
+  .modal h2{font-family:'Oswald',sans-serif; font-size:17px; margin:0 0 14px; text-transform:uppercase; letter-spacing:0.04em;}
+  .modal input{
+    width:100%; background:var(--bg); border:1px solid var(--line); color:var(--ink);
+    border-radius:8px; padding:11px 13px; font-size:15px; font-family:'Inter',sans-serif; margin-bottom:14px;
+  }
+  .modal input:focus{outline:none; border-color:var(--folder);}
+  .modal-actions{display:flex; gap:10px; justify-content:flex-end;}
+
+  /* Toast */
+  #toast{
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--card); border:1px solid var(--line); color:var(--ink);
+    padding:10px 18px; border-radius:999px; font-size:13px;
+    opacity:0; pointer-events:none; transition:all 0.25s ease; z-index:110;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  #import-file{display:none;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">
+      <span class="marks">|||⟍</span>
+      <h1>Tally Counter</h1>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="exportData()">Export</button>
+      <button class="icon-btn" onclick="document.getElementById('import-file').click()">Import</button>
+      <input type="file" id="import-file" accept="application/json">
+    </div>
+  </header>
+
+  <div class="crumbs" id="crumbs"></div>
+
+  <div class="toolbar">
+    <input class="search-input" id="search-input" placeholder="Search items…" oninput="handleSearch()">
+  </div>
+
+  <main id="main"></main>
+
+  <div class="fab-row">
+    <button class="btn secondary" onclick="openModal('folder')">+ Folder</button>
+    <button class="btn" onclick="openModal('item')">+ Item</button>
+  </div>
+
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal">
+      <h2 id="modal-title">New</h2>
+      <input type="text" id="modal-input" placeholder="Name">
+      <div class="modal-actions">
+        <button class="btn secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn" onclick="confirmModal()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+// ---------- Data model ----------
+const STORAGE_KEY = 'tally-inventory-v1';
+let data = loadData();
+let currentFolderId = 'root';
+let modalMode = null; // 'folder' | 'item' | 'rename-folder' | 'rename-item'
+let modalTargetId = null;
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {
+    folders: { root: { id:'root', name:'Inventory', parentId:null } },
+    items: {}
+  };
+}
+function saveData(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+// ---------- Navigation / rendering ----------
+function getPath(folderId){
+  const path = [];
+  let f = data.folders[folderId];
+  while(f){
+    path.unshift(f);
+    f = f.parentId ? data.folders[f.parentId] : null;
+  }
+  return path;
+}
+
+function goToFolder(id){
+  currentFolderId = id;
+  document.getElementById('search-input').value = '';
+  render();
+}
+
+function renderCrumbs(){
+  const path = getPath(currentFolderId);
+  const el = document.getElementById('crumbs');
+  el.innerHTML = path.map((f,i)=>{
+    const isLast = i === path.length-1;
+    return `${i>0 ? '<span class="crumb-sep">/</span>' : ''}<span class="crumb ${isLast?'current':''}" onclick="goToFolder('${f.id}')">${escapeHtml(f.name)}</span>`;
+  }).join('');
+}
+
+function childFolders(parentId){
+  return Object.values(data.folders).filter(f=>f.parentId === parentId);
+}
+function folderItems(folderId){
+  return Object.values(data.items).filter(i=>i.folderId === folderId);
+}
+
+function tallyMarks(count){
+  const groups = Math.floor(count/5);
+  const rem = count % 5;
+  let out = '';
+  for(let i=0;i<groups;i++) out += '𝍿 ';
+  out += '|'.repeat(rem);
+  return out || '—';
+}
+
+function render(){
+  renderCrumbs();
+  const main = document.getElementById('main');
+  const folders = childFolders(currentFolderId);
+  const items = folderItems(currentFolderId);
+
+  let html = '';
+
+  if(folders.length){
+    html += `<div class="section-label">Folders</div><div class="folder-grid">`;
+    html += folders.map(f=>{
+      const subCount = childFolders(f.id).length;
+      const itemCount = folderItems(f.id).length;
+      return `
+        <div class="folder-tile" onclick="goToFolder('${f.id}')">
+          <button class="tile-menu-btn" onclick="event.stopPropagation(); folderMenu('${f.id}')">⋯</button>
+          <div class="fname">📁 ${escapeHtml(f.name)}</div>
+          <div class="fcount">${subCount} folder${subCount!==1?'s':''} · ${itemCount} item${itemCount!==1?'s':''}</div>
+        </div>`;
+    }).join('');
+    html += `</div>`;
+  }
+
+  html += `<div class="section-label">Items</div>`;
+  if(items.length){
+    html += `<div class="ledger">`;
+    html += items.map(it=>`
+      <div class="ledger-row">
+        <div class="item-name" contenteditable="true" onblur="renameItem('${it.id}', this.textContent)" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">${escapeHtml(it.name)}</div>
+        <div class="tally-marks">${tallyMarks(it.count)}</div>
+        <div class="count-controls">
+          <button class="count-btn" onclick="adjustCount('${it.id}', -1)">−</button>
+          <span class="count-num" contenteditable="true" onblur="setCountDirect('${it.id}', this.textContent)" onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">${it.count}</span>
+          <button class="count-btn" onclick="adjustCount('${it.id}', 1)">+</button>
+        </div>
+        <button class="row-del" onclick="deleteItem('${it.id}')">✕</button>
+      </div>
+    `).join('');
+    html += `</div>`;
+  } else if(!folders.length){
+    html += `<div class="empty-state">Nothing here yet. Add a folder to organize, or add an item to start counting.</div>`;
+  } else {
+    html += `<div class="empty-state" style="padding:20px;">No items directly in this folder.</div>`;
+  }
+
+  main.innerHTML = html;
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ---------- Item actions ----------
+function adjustCount(id, delta){
+  const it = data.items[id];
+  if(!it) return;
+  it.count = Math.max(0, it.count + delta);
+  saveData();
+  render();
+}
+function setCountDirect(id, val){
+  const it = data.items[id];
+  if(!it) return;
+  const n = parseInt(val.replace(/[^0-9-]/g,''), 10);
+  it.count = isNaN(n) ? it.count : Math.max(0, n);
+  saveData();
+  render();
+}
+function renameItem(id, name){
+  const it = data.items[id];
+  if(!it) return;
+  const clean = name.trim();
+  it.name = clean || it.name;
+  saveData();
+  render();
+}
+function deleteItem(id){
+  if(!confirm('Delete this item?')) return;
+  delete data.items[id];
+  saveData();
+  render();
+}
+
+// ---------- Folder actions ----------
+function folderMenu(id){
+  const f = data.folders[id];
+  const choice = prompt(`Rename "${f.name}" (or type DELETE to remove it and everything inside):`, f.name);
+  if(choice === null) return;
+  if(choice.trim().toUpperCase() === 'DELETE'){
+    deleteFolderRecursive(id);
+  } else if(choice.trim()){
+    f.name = choice.trim();
+  }
+  saveData();
+  render();
+}
+function deleteFolderRecursive(id){
+  if(id === 'root') { showToast("Can't delete the root folder"); return; }
+  const kids = childFolders(id);
+  kids.forEach(k=>deleteFolderRecursive(k.id));
+  Object.values(data.items).filter(i=>i.folderId===id).forEach(i=>delete data.items[i.id]);
+  delete data.folders[id];
+  if(currentFolderId === id) currentFolderId = data.folders[id]?.parentId || 'root';
+}
+
+// ---------- Modal ----------
+function openModal(mode, targetId){
+  modalMode = mode;
+  modalTargetId = targetId || null;
+  document.getElementById('modal-title').textContent = mode === 'folder' ? 'New folder' : 'New item';
+  document.getElementById('modal-input').value = '';
+  document.getElementById('modal-backdrop').classList.add('show');
+  setTimeout(()=>document.getElementById('modal-input').focus(), 50);
+}
+function closeModal(){
+  document.getElementById('modal-backdrop').classList.remove('show');
+}
+function confirmModal(){
+  const val = document.getElementById('modal-input').value.trim();
+  if(!val) { closeModal(); return; }
+  if(modalMode === 'folder'){
+    const id = uid();
+    data.folders[id] = { id, name:val, parentId: currentFolderId };
+  } else if(modalMode === 'item'){
+    const id = uid();
+    data.items[id] = { id, name:val, count:0, folderId: currentFolderId };
+  }
+  saveData();
+  closeModal();
+  render();
+}
+document.getElementById('modal-input').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') confirmModal();
+});
+document.getElementById('modal-backdrop').addEventListener('click', (e)=>{
+  if(e.target.id === 'modal-backdrop') closeModal();
+});
+
+// ---------- Search ----------
+function handleSearch(){
+  const q = document.getElementById('search-input').value.trim().toLowerCase();
+  const main = document.getElementById('main');
+  if(!q){ render(); return; }
+  const matches = Object.values(data.items).filter(i=>i.name.toLowerCase().includes(q));
+  document.getElementById('crumbs').innerHTML = `<span class="crumb current">Search results for "${escapeHtml(q)}"</span>`;
+  if(!matches.length){
+    main.innerHTML = `<div class="empty-state">No items match "${escapeHtml(q)}".</div>`;
+    return;
+  }
+  main.innerHTML = `<div class="section-label">${matches.length} match${matches.length!==1?'es':''}</div><div class="ledger">` +
+    matches.map(it=>{
+      const path = getPath(it.folderId).map(f=>f.name).join(' / ');
+      return `
+      <div class="ledger-row">
+        <div style="flex:1;">
+          <div class="item-name" style="cursor:pointer;" onclick="goToFolder('${it.folderId}')">${escapeHtml(it.name)}</div>
+          <div style="font-size:11px; color:#8a8069; font-family:'IBM Plex Mono',monospace;">${escapeHtml(path)}</div>
+        </div>
+        <div class="tally-marks">${tallyMarks(it.count)}</div>
+        <div class="count-controls">
+          <button class="count-btn" onclick="adjustCount('${it.id}', -1); handleSearch();">−</button>
+          <span class="count-num">${it.count}</span>
+          <button class="count-btn" onclick="adjustCount('${it.id}', 1); handleSearch();">+</button>
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
+}
+
+// ---------- Export / Import ----------
+function exportData(){
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `tally-inventory-${stamp}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Exported backup file');
+}
+document.getElementById('import-file').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const incoming = JSON.parse(reader.result);
+      if(!incoming.folders || !incoming.items) throw new Error('bad format');
+      if(confirm('Import will replace your current inventory. Continue?')){
+        data = incoming;
+        if(!data.folders.root) data.folders.root = { id:'root', name:'Inventory', parentId:null };
+        currentFolderId = 'root';
+        saveData();
+        render();
+        showToast('Inventory imported');
+      }
+    }catch(err){
+      alert('That file could not be read as a Tally Counter backup.');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+// ---------- Init ----------
+render();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
